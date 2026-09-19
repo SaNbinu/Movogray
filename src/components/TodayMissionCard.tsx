@@ -1,22 +1,30 @@
 type TodayMissionCardProps = {
+  isCompleted: boolean
   onStart: () => void
 }
 
-function TodayMissionCard({ onStart }: TodayMissionCardProps) {
+function TodayMissionCard({ isCompleted, onStart }: TodayMissionCardProps) {
   return (
-    <article className="mission-card" aria-labelledby="mission-title">
+    <article
+      className={`mission-card${isCompleted ? ' mission-card--completed' : ''}`}
+      aria-labelledby="mission-title"
+    >
       <div className="mission-card__content">
-        <p className="mission-card__eyebrow">Сьогоднішня місія</p>
+        <p className="mission-card__eyebrow">
+          {isCompleted ? 'Сьогодні виконано' : 'Сьогоднішня місія'}
+        </p>
         <h2 id="mission-title">Запусти ракету</h2>
         <p className="mission-card__description">
-          Виконай вправи зі звуком і допоможи ракеті дістатися зірок.
+          {isCompleted
+            ? 'Усі вправи зі звуком виконано. Чудова робота!'
+            : 'Виконай вправи зі звуком і допоможи ракеті дістатися зірок.'}
         </p>
 
         <div className="mission-card__details" aria-label="Параметри завдання">
           <span className="sound-badge">
             Звук <strong>Р</strong>
           </span>
-          <span className="task-count">5 завдань</span>
+          <span className="task-count">{isCompleted ? '5 / 5' : '5 завдань'}</span>
         </div>
       </div>
 
@@ -61,12 +69,21 @@ function TodayMissionCard({ onStart }: TodayMissionCardProps) {
         </svg>
       </div>
 
-      <button className="mission-card__button" type="button" onClick={onStart}>
-        Почати гру
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m9 5 7 7-7 7" />
-        </svg>
-      </button>
+      {isCompleted ? (
+        <div className="mission-card__completed-status" role="status">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m5 12.5 4.2 4.2L19 7" />
+          </svg>
+          Місію завершено
+        </div>
+      ) : (
+        <button className="mission-card__button" type="button" onClick={onStart}>
+          Почати гру
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 5 7 7-7 7" />
+          </svg>
+        </button>
+      )}
     </article>
   )
 }

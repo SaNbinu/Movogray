@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import BottomNavigation from './components/BottomNavigation'
 import RocketGameScreen from './components/RocketGameScreen'
 import TodayMissionCard from './components/TodayMissionCard'
@@ -8,9 +8,27 @@ type AppScreen = 'home' | 'rocket-game'
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
+  const [points, setPoints] = useState(125)
+  const [missionCompleted, setMissionCompleted] = useState(false)
+  const rewardClaimedRef = useRef(false)
+
+  function handleMissionComplete() {
+    if (rewardClaimedRef.current) {
+      return
+    }
+
+    rewardClaimedRef.current = true
+    setPoints((currentPoints) => currentPoints + 25)
+    setMissionCompleted(true)
+  }
 
   if (currentScreen === 'rocket-game') {
-    return <RocketGameScreen onBack={() => setCurrentScreen('home')} />
+    return (
+      <RocketGameScreen
+        onBack={() => setCurrentScreen('home')}
+        onMissionComplete={handleMissionComplete}
+      />
+    )
   }
 
   return (
@@ -26,11 +44,11 @@ function App() {
           <span className="brand__name">Мовограй</span>
         </div>
 
-        <div className="header-score" aria-label="125 очок">
+        <div className="header-score" aria-label={`${points} очок`}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m12 3 2.7 5.4 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9Z" />
           </svg>
-          <strong>125</strong>
+          <strong>{points}</strong>
         </div>
       </header>
 
@@ -40,7 +58,10 @@ function App() {
           <p>Час для короткої мовної пригоди. Почнімо з головної місії.</p>
         </section>
 
-        <TodayMissionCard onStart={() => setCurrentScreen('rocket-game')} />
+        <TodayMissionCard
+          isCompleted={missionCompleted}
+          onStart={() => setCurrentScreen('rocket-game')}
+        />
 
         <section className="stats-grid" aria-label="Твої результати">
           <article className="stat-card stat-card--points">
@@ -50,7 +71,7 @@ function App() {
               </svg>
             </span>
             <span className="stat-card__label">Твої очки</span>
-            <strong>125</strong>
+            <strong>{points}</strong>
           </article>
 
           <article className="stat-card stat-card--streak">

@@ -208,6 +208,20 @@
   height: 2px;
 }
 
+.space-stage--finale .space-star {
+  animation: finale-star 650ms ease-out both;
+}
+
+.space-stage--finale .space-star:nth-of-type(2n) {
+  animation-delay: 80ms;
+}
+
+.space-stage--finale .space-stage__glow {
+  opacity: 0.75;
+  transform: translateX(-50%) scale(1.18);
+  transition: opacity 240ms ease, transform 500ms ease;
+}
+
 .rocket-flight-path {
   position: absolute;
   z-index: 3;
@@ -233,6 +247,10 @@
 
 .rocket-position--boost {
   animation: rocket-boost 360ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.rocket-position--finale {
+  animation: rocket-finale 850ms cubic-bezier(0.2, 0.75, 0.3, 1);
 }
 
 .game-rocket {
@@ -525,6 +543,35 @@
   line-height: 1.4;
 }
 
+.game-instruction--completed {
+  background: linear-gradient(145deg, #ffffff, #f4fff9);
+  box-shadow:
+    0 10px 24px rgba(45, 112, 91, 0.1),
+    inset 0 0 0 1px rgba(58, 172, 142, 0.1);
+}
+
+.mission-reward {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  color: #665014;
+  background: #fff3bd;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.mission-reward svg {
+  width: 18px;
+  fill: #f5c63e;
+  stroke: #dca51d;
+  stroke-linejoin: round;
+  stroke-width: 1.15;
+}
+
 .mission-progress {
   margin-top: 20px;
 }
@@ -765,6 +812,38 @@
   }
 }
 
+@keyframes rocket-finale {
+  0%,
+  100% {
+    transform: translateY(var(--rocket-offset, 0));
+  }
+
+  45% {
+    transform: translateY(calc(var(--rocket-offset, 0px) - 24px));
+  }
+
+  72% {
+    transform: translateY(calc(var(--rocket-offset, 0px) - 16px));
+  }
+}
+
+@keyframes finale-star {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.7);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(2.1);
+  }
+
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
 @media (max-width: 370px) {
   .rocket-game-shell {
     padding-right: 14px;
@@ -859,7 +938,9 @@
   .hold-sound-button--active svg circle,
   .game-rocket--active,
   .engine-flame--active .engine-flame__outer,
-  .rocket-position--boost {
+  .rocket-position--boost,
+  .rocket-position--finale,
+  .space-stage--finale .space-star {
     animation: none;
   }
 

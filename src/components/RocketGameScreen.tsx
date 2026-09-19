@@ -3,15 +3,17 @@ import './RocketGameScreen.css'
 
 type RocketGameScreenProps = {
   onBack: () => void
+  onMissionComplete: () => void
 }
 
-type GameStatus = 'ready' | 'holding' | 'success' | 'completed'
+type GameStatus = 'ready' | 'holding' | 'success' | 'finale' | 'completed'
 
 const HOLD_DURATION = 3000
 const NEXT_TASK_DELAY = 900
+const FINAL_SEQUENCE_DELAY = 850
 const TOTAL_TASKS = 5
 
-function RocketGameScreen({ onBack }: RocketGameScreenProps) {
+function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) {
   const [gameStatus, setGameStatus] = useState<GameStatus>('ready')
   const [holdProgress, setHoldProgress] = useState(0)
   const [completedTasks, setCompletedTasks] = useState(0)
@@ -46,8 +48,14 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
     setHoldProgress(1)
 
     if (nextCompletedTasks === TOTAL_TASKS) {
-      updateGameStatus('completed')
-      setFeedback('Місію виконано!')
+      updateGameStatus('finale')
+      setFeedback('5 з 5!')
+      onMissionComplete()
+      nextTaskTimeoutRef.current = window.setTimeout(() => {
+        nextTaskTimeoutRef.current = null
+        setFeedback(null)
+        updateGameStatus('completed')
+      }, FINAL_SEQUENCE_DELAY)
       return
     }
 
@@ -132,7 +140,8 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
   const buttonStyle = {
     '--hold-progress': `${holdProgress * 100}%`,
   } as CSSProperties
-  const isEngineActive = gameStatus === 'holding' || gameStatus === 'success'
+  const isFinale = gameStatus === 'finale'
+  const isEngineActive = gameStatus === 'holding' || gameStatus === 'success' || isFinale
   const isBoosting = gameStatus === 'success'
 
   return (
@@ -163,7 +172,10 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
       </header>
 
       <main className="rocket-game-content">
-        <section className="space-stage" aria-label="Ігрове поле з ракетою">
+        <section
+          className={`space-stage${isFinale ? ' space-stage--finale' : ''}`}
+          aria-label="Ігрове поле з ракетою"
+        >
           <span className="space-stage__glow" aria-hidden="true" />
           <span className="space-stage__orbit" aria-hidden="true" />
           <span className="space-stage__planet" aria-hidden="true" />
@@ -176,12 +188,12 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
 
           <div className="rocket-flight-path" ref={flightPathRef}>
             <div
-              className={`rocket-position${gameStatus === 'holding' ? ' rocket-position--holding' : ''}${isBoosting ? ' rocket-position--boost' : ''}`}
+              className={`rocket-position${gameStatus === 'holding' ? ' rocket-position--holding' : ''}${isBoosting ? ' rocket-position--boost' : ''}${isFinale ? ' rocket-position--finale' : ''}`}
               ref={rocketRef}
               style={rocketStyle}
             >
               <svg
-                className={`game-rocket${isEngineActive ? ' game-rocket--active' : ''}${isBoosting ? ' game-rocket--boost' : ''}`}
+                className={`game-rocket${isEngineActive ? ' game-rocket--active' : ''}${isBoosting || isFinale ? ' game-rocket--boost' : ''}`}
                 viewBox="0 0 190 180"
                 aria-hidden="true"
               >
@@ -207,7 +219,7 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
                 </g>
               </svg>
               <div
-                className={`engine-flame${isEngineActive ? ' engine-flame--active' : ''}${isBoosting ? ' engine-flame--boost' : ''}`}
+                className={`engine-flame${isEngineActive ? ' engine-flame--active' : ''}${isBoosting || isFinale ? ' engine-flame--boost' : ''}`}
                 aria-hidden="true"
               >
                 <span className="engine-flame__outer" />
@@ -215,7 +227,7 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
                 <span className="engine-flame__core" />
               </div>
               <div
-                className={`engine-particles${gameStatus === 'holding' ? ' engine-particles--active' : ''}${isBoosting ? ' engine-particles--boost' : ''}`}
+                className={`engine-particles${gameStatus === 'holding' ? ' engine-particles--active' : ''}${isBoosting || isFinale ? ' engine-particles--boost' : ''}`}
                 aria-hidden="true"
               >
                 <span />
@@ -235,7 +247,10 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
           </div>
         </section>
 
-        <section className="game-instruction" aria-labelledby="game-instruction-title">
+        <section
+          className={`game-instruction${gameStatus === 'completed' ? ' game-instruction--completed' : ''}`}
+          aria-labelledby="game-instruction-title"
+        >
           <span className={`game-instruction__sound${gameStatus === 'completed' ? ' game-instruction__sound--completed' : ''}`} aria-hidden="true">
             {gameStatus === 'completed' ? '✓' : 'Р'}
           </span>
@@ -246,7 +261,15 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
                 : 'Тягни звук «Р-р-р...» 3 секунди, щоб ракета злетіла'}
             </h2>
             {gameStatus === 'completed' && (
-              <p>Ти виконав усі 5 завдань зі звуком «Р»</p>
+              <>
+                <p>Ти виконав усі 5 завдань зі звуком «Р»</p>
+                <div className="mission-reward">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m12 3 2.7 5.4 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9Z" />
+                  </svg>
+                  +25 очок
+                </div>
+              </>
             )}
           </div>
         </section>
@@ -283,14 +306,14 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
 
         {gameStatus === 'completed' ? (
           <button className="return-home-button" type="button" onClick={onBack}>
-            Повернутися на головну
+            На головну
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m9 5 7 7-7 7" />
             </svg>
           </button>
         ) : (
           <button
-            className={`hold-sound-button${gameStatus === 'holding' ? ' hold-sound-button--active' : ''}${gameStatus === 'success' ? ' hold-sound-button--waiting' : ''}`}
+            className={`hold-sound-button${gameStatus === 'holding' ? ' hold-sound-button--active' : ''}${gameStatus === 'success' || isFinale ? ' hold-sound-button--waiting' : ''}`}
             type="button"
             aria-describedby="demo-mode-note"
             aria-pressed={gameStatus === 'holding'}
@@ -304,12 +327,20 @@ function RocketGameScreen({ onBack }: RocketGameScreenProps) {
               <circle cx="15" cy="15" r="4" />
               <path d="M8.8 8.8a8.8 8.8 0 0 0 0 12.4m12.4 0a8.8 8.8 0 0 0 0-12.4M5 5a14.1 14.1 0 0 0 0 20m20 0a14.1 14.1 0 0 0 0-20" />
             </svg>
-            <span>{gameStatus === 'success' ? 'Наступне завдання...' : 'Утримуй звук'}</span>
+            <span>
+              {gameStatus === 'success'
+                ? 'Наступне завдання...'
+                : isFinale
+                  ? 'Фінальний зліт...'
+                  : 'Утримуй звук'}
+            </span>
           </button>
         )}
-        <p className="demo-mode-note" id="demo-mode-note">
-          Демо-режим: утримування кнопки імітує вимову звуку
-        </p>
+        {gameStatus !== 'completed' && (
+          <p className="demo-mode-note" id="demo-mode-note">
+            Демо-режим: утримування кнопки імітує вимову звуку
+          </p>
+        )}
       </main>
     </div>
   )
