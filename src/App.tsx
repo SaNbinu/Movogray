@@ -1,8 +1,18 @@
+import { useState } from 'react'
 import BottomNavigation from './components/BottomNavigation'
+import RocketGameScreen from './components/RocketGameScreen'
 import TodayMissionCard from './components/TodayMissionCard'
 import './App.css'
 
+type AppScreen = 'home' | 'rocket-game'
+
 function App() {
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
+
+  if (currentScreen === 'rocket-game') {
+    return <RocketGameScreen onBack={() => setCurrentScreen('home')} />
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -30,7 +40,7 @@ function App() {
           <p>Час для короткої мовної пригоди. Почнімо з головної місії.</p>
         </section>
 
-        <TodayMissionCard />
+        <TodayMissionCard onStart={() => setCurrentScreen('rocket-game')} />
 
         <section className="stats-grid" aria-label="Твої результати">
           <article className="stat-card stat-card--points">

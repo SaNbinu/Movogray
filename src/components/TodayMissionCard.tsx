@@ -1,4 +1,8 @@
-function TodayMissionCard() {
+type TodayMissionCardProps = {
+  onStart: () => void
+}
+
+function TodayMissionCard({ onStart }: TodayMissionCardProps) {
   return (
     <article className="mission-card" aria-labelledby="mission-title">
       <div className="mission-card__content">
@@ -57,7 +61,7 @@ function TodayMissionCard() {
         </svg>
       </div>
 
-      <button className="mission-card__button" type="button">
+      <button className="mission-card__button" type="button" onClick={onStart}>
         Почати гру
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m9 5 7 7-7 7" />
