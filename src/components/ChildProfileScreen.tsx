@@ -64,7 +64,7 @@ function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenP
         </div>
         <div className="profile-tasks__list">
           {child.tasks.map((task) => (
-            <article className="profile-task-card" key={task.title}>
+            <article className="profile-task-card" key={task.id}>
               <span className="profile-task-card__icon" aria-hidden="true">{task.icon}</span>
               <div>
                 <h3>{task.title}</h3>

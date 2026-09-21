@@ -108,6 +108,25 @@
   margin-bottom: 24px;
 }
 
+.welcome-section__profile-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.profile-switch-button {
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 10px;
+  color: #625b9f;
+  background: #f0efff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
 .welcome-section h1 {
   margin: 0 0 10px;
   color: var(--color-ink);
@@ -455,11 +474,89 @@
   background: #3aac8e;
 }
 
+.mission-card--empty .mission-card__content {
+  max-width: 72%;
+}
+
+.mission-card--empty .mission-visual {
+  opacity: 0.52;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 23px;
+}
+
+.child-tasks {
+  margin-top: 40px;
+}
+
+.child-tasks__list {
+  display: grid;
+  gap: 10px;
+}
+
+.child-task-card {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border-radius: 19px;
+  background: #fff;
+  box-shadow:
+    0 7px 17px rgba(52, 48, 86, 0.065),
+    inset 0 0 0 1px rgba(71, 66, 112, 0.035);
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
+.child-task-card__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: #f0efff;
+  font-size: 20px;
+}
+
+.child-task-card h3 {
+  overflow: hidden;
+  margin: 0 0 3px;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.child-task-card p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.child-task-card__status {
+  display: inline-flex;
+  padding: 5px 7px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15px;
+  white-space: nowrap;
+}
+
+.child-task-card__status--completed {
+  color: #27816a;
+  background: #e7f8f2;
+}
+
+.child-task-card__status--pending {
+  color: #847d92;
+  background: #f2f1f6;
 }
 
 .stat-card {
@@ -779,12 +876,18 @@
 }
 
 .bottom-navigation__item:focus-visible,
-.mission-card__button:focus-visible {
+.mission-card__button:focus-visible,
+.profile-switch-button:focus-visible {
   outline: 3px solid rgba(79, 98, 220, 0.35);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
+  .profile-switch-button:hover {
+    color: #504aaa;
+    background: #e8e7ff;
+  }
+
   .mission-card__button:hover {
     background: linear-gradient(180deg, #ffeb95 0%, #ffda63 100%);
     box-shadow:

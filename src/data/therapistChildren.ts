@@ -17,6 +17,7 @@ export type TherapistChild = {
   id: string
   name: string
   targetSound: string
+  points: number
   streak: string
   lastActivity: string
   avatarColor: 'blue' | 'purple' | 'mint'
@@ -29,6 +30,7 @@ export const therapistChildren: TherapistChild[] = [
     id: 'maksym',
     name: 'Максим',
     targetSound: 'Р',
+    points: 125,
     streak: '3 дні',
     lastActivity: 'сьогодні',
     avatarColor: 'blue',
@@ -43,6 +45,7 @@ export const therapistChildren: TherapistChild[] = [
     id: 'sofiia',
     name: 'Софія',
     targetSound: 'С',
+    points: 180,
     streak: '5 днів',
     lastActivity: 'сьогодні',
     avatarColor: 'purple',
@@ -57,6 +60,7 @@ export const therapistChildren: TherapistChild[] = [
     id: 'artem',
     name: 'Артем',
     targetSound: 'Ш',
+    points: 90,
     streak: '1 день',
     lastActivity: 'вчора',
     avatarColor: 'mint',

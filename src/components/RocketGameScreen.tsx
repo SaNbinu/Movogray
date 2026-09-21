@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import type { TherapistTask } from '../data/therapistChildren'
 import './RocketGameScreen.css'
 
 type RocketGameScreenProps = {
+  task: Pick<TherapistTask, 'id' | 'title' | 'targetSound' | 'repetitions' | 'durationSeconds'>
   onBack: () => void
   onMissionComplete: () => void
 }
@@ -17,10 +19,8 @@ type AudioDebugData = {
 }
 
 const AUDIO_DEBUG = false
-const HOLD_DURATION = 3000
 const NEXT_TASK_DELAY = 900
 const FINAL_SEQUENCE_DELAY = 850
-const TOTAL_TASKS = 5
 const CALIBRATION_DURATION = 1200
 const MIN_VOICE_THRESHOLD = 0.025
 const MAX_VOICE_THRESHOLD = 0.18
@@ -35,7 +35,10 @@ const CONTINUING_FRICATIVE_ENERGY_RATIO = 0.3
 const VOICE_START_DELAY = 160
 const VOICE_STOP_DELAY = 160
 
-function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) {
+function RocketGameScreen({ task, onBack, onMissionComplete }: RocketGameScreenProps) {
+  const holdDuration = task.durationSeconds * 1000
+  const totalTasks = task.repetitions
+  const secondsLabel = `${task.durationSeconds} ${task.durationSeconds === 5 ? 'секунд' : 'секунди'}`
   const [gameStatus, setGameStatus] = useState<GameStatus>('ready')
   const [holdProgress, setHoldProgress] = useState(0)
   const [completedTasks, setCompletedTasks] = useState(0)
@@ -397,15 +400,15 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
 
   function completeAttempt() {
     animationFrameRef.current = null
-    const nextCompletedTasks = Math.min(completedTasksRef.current + 1, TOTAL_TASKS)
+    const nextCompletedTasks = Math.min(completedTasksRef.current + 1, totalTasks)
 
     completedTasksRef.current = nextCompletedTasks
     setCompletedTasks(nextCompletedTasks)
     setHoldProgress(1)
 
-    if (nextCompletedTasks === TOTAL_TASKS) {
+    if (nextCompletedTasks === totalTasks) {
       updateGameStatus('finale')
-      setFeedback('5 з 5!')
+      setFeedback(`${totalTasks} з ${totalTasks}!`)
       onMissionComplete()
       nextTaskTimeoutRef.current = window.setTimeout(() => {
         nextTaskTimeoutRef.current = null
@@ -434,7 +437,7 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
     }
 
     const elapsed = timestamp - holdStartedAtRef.current
-    const nextProgress = Math.min(elapsed / HOLD_DURATION, 1)
+    const nextProgress = Math.min(elapsed / holdDuration, 1)
     setHoldProgress(nextProgress)
 
     if (nextProgress === 1) {
@@ -476,8 +479,8 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
     }
   }, [])
 
-  const currentTask = Math.min(completedTasks + 1, TOTAL_TASKS)
-  const elapsedSeconds = (holdProgress * (HOLD_DURATION / 1000)).toFixed(1)
+  const currentTask = Math.min(completedTasks + 1, totalTasks)
+  const elapsedSeconds = (holdProgress * (holdDuration / 1000)).toFixed(1)
   const launchProgress = Math.max((holdProgress - 0.05) / 0.95, 0)
   const rocketOffset = -(rocketTravel * launchProgress)
   const rocketStyle = {
@@ -498,7 +501,7 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
   } as CSSProperties
 
   return (
-    <div className="rocket-game-shell">
+    <div className="rocket-game-shell" data-task-id={task.id}>
       <header className="rocket-game-header">
         <button
           className="rocket-game-header__back"
@@ -512,15 +515,15 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
         </button>
 
         <div className="rocket-game-header__title">
-          <h1>Запусти ракету</h1>
-          <p>Тренуємо звук «Р»</p>
+          <h1>{task.title}</h1>
+          <p>Тренуємо звук «{task.targetSound}»</p>
         </div>
 
         <span
           className="rocket-game-header__step"
-          aria-label={`${currentTask} завдання з ${TOTAL_TASKS}`}
+          aria-label={`${currentTask} завдання з ${totalTasks}`}
         >
-          {currentTask} / {TOTAL_TASKS}
+          {currentTask} / {totalTasks}
         </span>
       </header>
 
@@ -605,22 +608,22 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
           aria-labelledby="game-instruction-title"
         >
           <span className={`game-instruction__sound${gameStatus === 'completed' ? ' game-instruction__sound--completed' : ''}`} aria-hidden="true">
-            {gameStatus === 'completed' ? '✓' : 'Р'}
+            {gameStatus === 'completed' ? '✓' : task.targetSound}
           </span>
           <div className="game-instruction__copy">
             <h2 id="game-instruction-title">
               {gameStatus === 'completed'
                 ? 'Місію виконано!'
                 : isMicrophoneReady
-                  ? 'Тягни звук «Р-р-р...» 3 секунди'
-                  : 'Тягни звук «Р-р-р...» 3 секунди, щоб ракета злетіла'}
+                  ? `Тягни звук «${task.targetSound}» ${secondsLabel}`
+                  : `Тягни звук «${task.targetSound}» ${secondsLabel}, щоб ракета злетіла`}
             </h2>
             {isMicrophoneReady && gameStatus !== 'completed' && (
               <p>Говори безперервно, щоб ракета злетіла</p>
             )}
             {gameStatus === 'completed' && (
               <>
-                <p>Ти виконав усі 5 завдань зі звуком «Р»</p>
+                <p>Ти виконав усі {totalTasks} завдань зі звуком «{task.targetSound}»</p>
                 <div className="mission-reward">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="m12 3 2.7 5.4 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9Z" />
@@ -634,17 +637,17 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
 
         <section
           className="mission-progress"
-          aria-label={`Прогрес місії: виконано ${completedTasks} з ${TOTAL_TASKS} завдань`}
+          aria-label={`Прогрес місії: виконано ${completedTasks} з ${totalTasks} завдань`}
         >
           <div className="mission-progress__heading">
             <span>Прогрес місії</span>
             <span className="mission-progress__timer">
-              {gameStatus === 'holding' ? `${elapsedSeconds} с` : '3 секунди'}
+              {gameStatus === 'holding' ? `${elapsedSeconds} с` : secondsLabel}
             </span>
-            <strong>{currentTask} з {TOTAL_TASKS}</strong>
+            <strong>{currentTask} з {totalTasks}</strong>
           </div>
           <div className="mission-progress__steps" aria-hidden="true">
-            {Array.from({ length: TOTAL_TASKS }, (_, index) => {
+            {Array.from({ length: totalTasks }, (_, index) => {
               const isCompleted = index < completedTasks
               const isCurrent = index === completedTasks && gameStatus !== 'completed'
               const segmentStyle = isCurrent

@@ -1,31 +1,40 @@
+import type { TherapistTask } from '../data/therapistChildren'
+
 type TodayMissionCardProps = {
+  task: TherapistTask | null
   isCompleted: boolean
   onStart: () => void
 }
 
-function TodayMissionCard({ isCompleted, onStart }: TodayMissionCardProps) {
+function TodayMissionCard({ task, isCompleted, onStart }: TodayMissionCardProps) {
+  const isEmpty = task === null
+
   return (
     <article
-      className={`mission-card${isCompleted ? ' mission-card--completed' : ''}`}
+      className={`mission-card${isCompleted && !isEmpty ? ' mission-card--completed' : ''}${isEmpty ? ' mission-card--empty' : ''}`}
       aria-labelledby="mission-title"
     >
       <div className="mission-card__content">
         <p className="mission-card__eyebrow">
-          {isCompleted ? 'Сьогодні виконано' : 'Сьогоднішня місія'}
+          {isEmpty ? 'На сьогодні все' : isCompleted ? 'Сьогодні виконано' : 'Сьогоднішня місія'}
         </p>
-        <h2 id="mission-title">Запусти ракету</h2>
+        <h2 id="mission-title">{task?.title ?? 'Усі завдання виконано! 🎉'}</h2>
         <p className="mission-card__description">
-          {isCompleted
+          {isEmpty
+            ? 'Нових ігор поки немає. Завітай трохи пізніше.'
+            : isCompleted
             ? 'Усі вправи зі звуком виконано. Чудова робота!'
             : 'Виконай вправи зі звуком і допоможи ракеті дістатися зірок.'}
         </p>
 
-        <div className="mission-card__details" aria-label="Параметри завдання">
-          <span className="sound-badge">
-            Звук <strong>Р</strong>
-          </span>
-          <span className="task-count">{isCompleted ? '5 / 5' : '5 завдань'}</span>
-        </div>
+        {task && (
+          <div className="mission-card__details" aria-label="Параметри завдання">
+            <span className="sound-badge">
+              Звук <strong>{task.targetSound}</strong>
+            </span>
+            <span className="task-count">{task.repetitions} повторень · {task.durationSeconds} с</span>
+          </div>
+        )}
       </div>
 
       <div className="mission-visual" aria-hidden="true">
@@ -69,21 +78,21 @@ function TodayMissionCard({ isCompleted, onStart }: TodayMissionCardProps) {
         </svg>
       </div>
 
-      {isCompleted ? (
+      {task && isCompleted ? (
         <div className="mission-card__completed-status" role="status">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m5 12.5 4.2 4.2L19 7" />
           </svg>
           Місію завершено
         </div>
-      ) : (
+      ) : task ? (
         <button className="mission-card__button" type="button" onClick={onStart}>
           Почати гру
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m9 5 7 7-7 7" />
           </svg>
         </button>
-      )}
+      ) : null}
     </article>
   )
 }
