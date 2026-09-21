@@ -7,11 +7,33 @@ type RocketGameScreenProps = {
 }
 
 type GameStatus = 'ready' | 'holding' | 'success' | 'finale' | 'completed'
+type InputMode = 'microphone-setup' | 'microphone' | 'demo'
+type MicrophoneStatus = 'idle' | 'requesting' | 'calibrating' | 'ready' | 'error' | 'unsupported'
+type AudioDebugData = {
+  rms: number
+  lowMidEnergyRatio: number
+  fricativeEnergyRatio: number
+  voiceCandidate: boolean
+}
 
+const AUDIO_DEBUG = false
 const HOLD_DURATION = 3000
 const NEXT_TASK_DELAY = 900
 const FINAL_SEQUENCE_DELAY = 850
 const TOTAL_TASKS = 5
+const CALIBRATION_DURATION = 1200
+const MIN_VOICE_THRESHOLD = 0.025
+const MAX_VOICE_THRESHOLD = 0.18
+const LOW_MID_MIN_FREQUENCY = 80
+const LOW_MID_MAX_FREQUENCY = 4000
+const FRICATIVE_MIN_FREQUENCY = 2000
+const FRICATIVE_MAX_FREQUENCY = 8000
+const MIN_LOW_MID_ENERGY_RATIO = 0.5
+const MIN_FRICATIVE_ENERGY_RATIO = 0.38
+const CONTINUING_LOW_MID_ENERGY_RATIO = 0.35
+const CONTINUING_FRICATIVE_ENERGY_RATIO = 0.3
+const VOICE_START_DELAY = 160
+const VOICE_STOP_DELAY = 160
 
 function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) {
   const [gameStatus, setGameStatus] = useState<GameStatus>('ready')
@@ -19,11 +41,40 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
   const [completedTasks, setCompletedTasks] = useState(0)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [rocketTravel, setRocketTravel] = useState(0)
+  const [inputMode, setInputMode] = useState<InputMode>('microphone-setup')
+  const [microphoneStatus, setMicrophoneStatus] = useState<MicrophoneStatus>('idle')
+  const [microphoneError, setMicrophoneError] = useState('')
+  const [currentVolume, setCurrentVolume] = useState(0)
+  const [voiceThreshold, setVoiceThreshold] = useState(0.05)
+  const [isVoiceActive, setIsVoiceActive] = useState(false)
+  const [audioDebugData, setAudioDebugData] = useState<AudioDebugData>({
+    rms: 0,
+    lowMidEnergyRatio: 0,
+    fricativeEnergyRatio: 0,
+    voiceCandidate: false,
+  })
   const animationFrameRef = useRef<number | null>(null)
+  const audioFrameRef = useRef<number | null>(null)
   const nextTaskTimeoutRef = useRef<number | null>(null)
   const holdStartedAtRef = useRef(0)
   const gameStatusRef = useRef<GameStatus>('ready')
+  const microphoneStatusRef = useRef<MicrophoneStatus>('idle')
   const completedTasksRef = useRef(0)
+  const voiceThresholdRef = useRef(0.05)
+  const voiceActiveRef = useRef(false)
+  const voiceStartedAtRef = useRef<number | null>(null)
+  const silenceStartedAtRef = useRef<number | null>(null)
+  const calibrationStartedAtRef = useRef(0)
+  const calibrationVolumeTotalRef = useRef(0)
+  const calibrationSamplesRef = useRef(0)
+  const lastVolumeUpdateRef = useRef(0)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const audioDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null)
+  const frequencyDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
+  const mountedRef = useRef(true)
   const flightPathRef = useRef<HTMLDivElement>(null)
   const rocketRef = useRef<HTMLDivElement>(null)
 
@@ -37,6 +88,311 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
       cancelAnimationFrame(animationFrameRef.current)
       animationFrameRef.current = null
     }
+  }
+
+  function updateMicrophoneStatus(status: MicrophoneStatus) {
+    microphoneStatusRef.current = status
+    setMicrophoneStatus(status)
+  }
+
+  function releaseAudioResources() {
+    if (audioFrameRef.current !== null) {
+      cancelAnimationFrame(audioFrameRef.current)
+      audioFrameRef.current = null
+    }
+
+    sourceNodeRef.current?.disconnect()
+    analyserRef.current?.disconnect()
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+
+    const audioContext = audioContextRef.current
+    if (audioContext && audioContext.state !== 'closed') {
+      void audioContext.close().catch(() => undefined)
+    }
+
+    sourceNodeRef.current = null
+    analyserRef.current = null
+    mediaStreamRef.current = null
+    audioContextRef.current = null
+    audioDataRef.current = null
+    frequencyDataRef.current = null
+    voiceActiveRef.current = false
+    voiceStartedAtRef.current = null
+    silenceStartedAtRef.current = null
+  }
+
+  function startAttempt(startedAt: number) {
+    if (gameStatusRef.current !== 'ready') {
+      return
+    }
+
+    stopAnimationFrame()
+
+    const flightPathHeight = flightPathRef.current?.clientHeight ?? 0
+    const rocketHeight = rocketRef.current?.clientHeight ?? 0
+    setRocketTravel(Math.max(flightPathHeight - rocketHeight, 0))
+    holdStartedAtRef.current = startedAt
+    setFeedback(null)
+    setHoldProgress(0)
+    updateGameStatus('holding')
+    animationFrameRef.current = requestAnimationFrame(updateHoldProgress)
+  }
+
+  function cancelAttempt() {
+    if (gameStatusRef.current !== 'holding') {
+      return
+    }
+
+    stopAnimationFrame()
+    setHoldProgress(0)
+    setFeedback(null)
+    updateGameStatus('ready')
+  }
+
+  function setVoiceDetected(isActive: boolean, timestamp: number) {
+    if (voiceActiveRef.current === isActive) {
+      return
+    }
+
+    voiceActiveRef.current = isActive
+    setIsVoiceActive(isActive)
+
+    if (isActive) {
+      startAttempt(timestamp)
+    } else {
+      cancelAttempt()
+    }
+  }
+
+  function updateVoiceDetection(
+    voiceCandidate: boolean,
+    continuingVoice: boolean,
+    timestamp: number,
+  ) {
+    if (!voiceActiveRef.current) {
+      silenceStartedAtRef.current = null
+
+      if (!voiceCandidate) {
+        voiceStartedAtRef.current = null
+        return
+      }
+
+      voiceStartedAtRef.current ??= timestamp
+      if (timestamp - voiceStartedAtRef.current >= VOICE_START_DELAY) {
+        voiceStartedAtRef.current = null
+        setVoiceDetected(true, timestamp)
+      }
+      return
+    }
+
+    voiceStartedAtRef.current = null
+    if (continuingVoice) {
+      silenceStartedAtRef.current = null
+      return
+    }
+
+    silenceStartedAtRef.current ??= timestamp
+    if (timestamp - silenceStartedAtRef.current >= VOICE_STOP_DELAY) {
+      silenceStartedAtRef.current = null
+      setVoiceDetected(false, timestamp)
+    }
+  }
+
+  function calculateSpeechEnergyRatios(
+    analyser: AnalyserNode,
+    frequencyData: Float32Array<ArrayBuffer>,
+  ) {
+    analyser.getFloatFrequencyData(frequencyData)
+    const audioContext = audioContextRef.current
+    if (!audioContext) {
+      return { lowMidEnergyRatio: 0, fricativeEnergyRatio: 0 }
+    }
+
+    const frequencyPerBin = audioContext.sampleRate / analyser.fftSize
+    const nyquistFrequency = audioContext.sampleRate / 2
+    const fricativeUpperFrequency = Math.min(FRICATIVE_MAX_FREQUENCY, nyquistFrequency)
+    let totalEnergy = 0
+    let lowMidEnergy = 0
+    let fricativeEnergy = 0
+
+    for (let index = 1; index < frequencyData.length; index += 1) {
+      const decibels = frequencyData[index]
+      if (!Number.isFinite(decibels)) {
+        continue
+      }
+
+      const energy = 10 ** (decibels / 10)
+      const frequency = index * frequencyPerBin
+      totalEnergy += energy
+
+      if (
+        frequency >= LOW_MID_MIN_FREQUENCY
+        && frequency <= LOW_MID_MAX_FREQUENCY
+      ) {
+        lowMidEnergy += energy
+      }
+
+      if (
+        frequency >= FRICATIVE_MIN_FREQUENCY
+        && frequency <= fricativeUpperFrequency
+      ) {
+        fricativeEnergy += energy
+      }
+    }
+
+    if (totalEnergy === 0) {
+      return { lowMidEnergyRatio: 0, fricativeEnergyRatio: 0 }
+    }
+
+    return {
+      lowMidEnergyRatio: lowMidEnergy / totalEnergy,
+      fricativeEnergyRatio: fricativeEnergy / totalEnergy,
+    }
+  }
+
+  function analyseAudio(timestamp: number) {
+    const analyser = analyserRef.current
+    const audioData = audioDataRef.current
+    const frequencyData = frequencyDataRef.current
+
+    if (!analyser || !audioData || !frequencyData) {
+      return
+    }
+
+    analyser.getByteTimeDomainData(audioData)
+    let squareTotal = 0
+
+    for (const sample of audioData) {
+      const normalizedSample = (sample - 128) / 128
+      squareTotal += normalizedSample * normalizedSample
+    }
+
+    const volume = Math.sqrt(squareTotal / audioData.length)
+    const { lowMidEnergyRatio, fricativeEnergyRatio } = calculateSpeechEnergyRatios(
+      analyser,
+      frequencyData,
+    )
+    const voiceCandidate = (
+      volume >= voiceThresholdRef.current
+      && (
+        lowMidEnergyRatio >= MIN_LOW_MID_ENERGY_RATIO
+        || fricativeEnergyRatio >= MIN_FRICATIVE_ENERGY_RATIO
+      )
+    )
+    const continuingVoice = (
+      volume >= voiceThresholdRef.current * 0.72
+      && (
+        lowMidEnergyRatio >= CONTINUING_LOW_MID_ENERGY_RATIO
+        || fricativeEnergyRatio >= CONTINUING_FRICATIVE_ENERGY_RATIO
+      )
+    )
+
+    if (timestamp - lastVolumeUpdateRef.current >= 50) {
+      lastVolumeUpdateRef.current = timestamp
+      setCurrentVolume(volume)
+
+      if (AUDIO_DEBUG) {
+        setAudioDebugData({
+          rms: volume,
+          lowMidEnergyRatio,
+          fricativeEnergyRatio,
+          voiceCandidate,
+        })
+      }
+    }
+
+    if (microphoneStatusRef.current === 'calibrating') {
+      if (calibrationStartedAtRef.current === 0) {
+        calibrationStartedAtRef.current = timestamp
+      }
+
+      calibrationVolumeTotalRef.current += volume
+      calibrationSamplesRef.current += 1
+
+      if (timestamp - calibrationStartedAtRef.current >= CALIBRATION_DURATION) {
+        const noiseFloor = calibrationSamplesRef.current > 0
+          ? calibrationVolumeTotalRef.current / calibrationSamplesRef.current
+          : 0
+        const calibratedThreshold = Math.min(
+          Math.max(noiseFloor * 2.2 + 0.015, MIN_VOICE_THRESHOLD),
+          MAX_VOICE_THRESHOLD,
+        )
+
+        voiceThresholdRef.current = calibratedThreshold
+        setVoiceThreshold(calibratedThreshold)
+        updateMicrophoneStatus('ready')
+      }
+    } else if (microphoneStatusRef.current === 'ready') {
+      updateVoiceDetection(voiceCandidate, continuingVoice, timestamp)
+    }
+
+    audioFrameRef.current = requestAnimationFrame(analyseAudio)
+  }
+
+  async function enableMicrophone() {
+    if (microphoneStatusRef.current === 'requesting' || mediaStreamRef.current) {
+      return
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof AudioContext === 'undefined') {
+      updateMicrophoneStatus('unsupported')
+      setMicrophoneError('Мікрофон недоступний у цьому браузері')
+      return
+    }
+
+    updateMicrophoneStatus('requesting')
+    setMicrophoneError('')
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      if (!mountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+
+      mediaStreamRef.current = stream
+      const audioContext = new AudioContext()
+      const analyser = audioContext.createAnalyser()
+      const sourceNode = audioContext.createMediaStreamSource(stream)
+
+      analyser.fftSize = 1024
+      analyser.minDecibels = -100
+      analyser.maxDecibels = -10
+      analyser.smoothingTimeConstant = 0.15
+      sourceNode.connect(analyser)
+      audioContextRef.current = audioContext
+      analyserRef.current = analyser
+      sourceNodeRef.current = sourceNode
+      await audioContext.resume()
+
+      if (!mountedRef.current) {
+        releaseAudioResources()
+        return
+      }
+
+      audioDataRef.current = new Uint8Array(analyser.fftSize)
+      frequencyDataRef.current = new Float32Array(analyser.frequencyBinCount)
+      calibrationStartedAtRef.current = 0
+      calibrationVolumeTotalRef.current = 0
+      calibrationSamplesRef.current = 0
+      lastVolumeUpdateRef.current = 0
+      setInputMode('microphone')
+      updateMicrophoneStatus('calibrating')
+      audioFrameRef.current = requestAnimationFrame(analyseAudio)
+    } catch {
+      releaseAudioResources()
+      if (mountedRef.current) {
+        updateMicrophoneStatus('error')
+        setMicrophoneError('Не вдалося отримати доступ до мікрофона')
+      }
+    }
+  }
+
+  function enableDemoMode() {
+    releaseAudioResources()
+    setCurrentVolume(0)
+    setIsVoiceActive(false)
+    setInputMode('demo')
   }
 
   function completeAttempt() {
@@ -54,6 +410,9 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
       nextTaskTimeoutRef.current = window.setTimeout(() => {
         nextTaskTimeoutRef.current = null
         setFeedback(null)
+        releaseAudioResources()
+        setCurrentVolume(0)
+        setIsVoiceActive(false)
         updateGameStatus('completed')
       }, FINAL_SEQUENCE_DELAY)
       return
@@ -92,16 +451,7 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
     }
 
     event.currentTarget.setPointerCapture(event.pointerId)
-    stopAnimationFrame()
-
-    const flightPathHeight = flightPathRef.current?.clientHeight ?? 0
-    const rocketHeight = rocketRef.current?.clientHeight ?? 0
-    setRocketTravel(Math.max(flightPathHeight - rocketHeight, 0))
-    holdStartedAtRef.current = performance.now()
-    setFeedback(null)
-    setHoldProgress(0)
-    updateGameStatus('holding')
-    animationFrameRef.current = requestAnimationFrame(updateHoldProgress)
+    startAttempt(event.timeStamp)
   }
 
   function handlePointerEnd(event: PointerEvent<HTMLButtonElement>) {
@@ -109,19 +459,16 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
 
-    if (gameStatusRef.current !== 'holding') {
-      return
-    }
-
-    stopAnimationFrame()
-    setHoldProgress(0)
-    setFeedback(null)
-    updateGameStatus('ready')
+    cancelAttempt()
   }
 
   useEffect(() => {
+    mountedRef.current = true
+
     return () => {
+      mountedRef.current = false
       stopAnimationFrame()
+      releaseAudioResources()
 
       if (nextTaskTimeoutRef.current !== null) {
         window.clearTimeout(nextTaskTimeoutRef.current)
@@ -143,6 +490,12 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
   const isFinale = gameStatus === 'finale'
   const isEngineActive = gameStatus === 'holding' || gameStatus === 'success' || isFinale
   const isBoosting = gameStatus === 'success'
+  const isMicrophoneReady = inputMode === 'microphone' && microphoneStatus === 'ready'
+  const meterReference = isMicrophoneReady ? Math.max(voiceThreshold * 1.8, 0.06) : 0.12
+  const audioLevel = Math.min(currentVolume / meterReference, 1)
+  const audioMeterStyle = {
+    '--audio-level': `${audioLevel * 100}%`,
+  } as CSSProperties
 
   return (
     <div className="rocket-game-shell">
@@ -258,8 +611,13 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
             <h2 id="game-instruction-title">
               {gameStatus === 'completed'
                 ? 'Місію виконано!'
-                : 'Тягни звук «Р-р-р...» 3 секунди, щоб ракета злетіла'}
+                : isMicrophoneReady
+                  ? 'Тягни звук «Р-р-р...» 3 секунди'
+                  : 'Тягни звук «Р-р-р...» 3 секунди, щоб ракета злетіла'}
             </h2>
+            {isMicrophoneReady && gameStatus !== 'completed' && (
+              <p>Говори безперервно, щоб ракета злетіла</p>
+            )}
             {gameStatus === 'completed' && (
               <>
                 <p>Ти виконав усі 5 завдань зі звуком «Р»</p>
@@ -311,7 +669,7 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
               <path d="m9 5 7 7-7 7" />
             </svg>
           </button>
-        ) : (
+        ) : inputMode === 'demo' ? (
           <button
             className={`hold-sound-button${gameStatus === 'holding' ? ' hold-sound-button--active' : ''}${gameStatus === 'success' || isFinale ? ' hold-sound-button--waiting' : ''}`}
             type="button"
@@ -335,8 +693,86 @@ function RocketGameScreen({ onBack, onMissionComplete }: RocketGameScreenProps) 
                   : 'Утримуй звук'}
             </span>
           </button>
+        ) : (
+          <section className="microphone-control" aria-live="polite">
+            {microphoneStatus === 'idle' && (
+              <>
+                <button className="microphone-enable-button" type="button" onClick={enableMicrophone}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="8" y="3" width="8" height="12" rx="4" />
+                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8" />
+                  </svg>
+                  Увімкнути мікрофон
+                </button>
+                <button className="demo-mode-button" type="button" onClick={enableDemoMode}>
+                  Демо без мікрофона
+                </button>
+              </>
+            )}
+
+            {microphoneStatus === 'requesting' && (
+              <div className="microphone-state microphone-state--loading">
+                <span className="microphone-state__indicator" aria-hidden="true" />
+                <div>
+                  <strong>Підключаємо мікрофон...</strong>
+                  <p>Підтвердь доступ у браузері</p>
+                </div>
+              </div>
+            )}
+
+            {(microphoneStatus === 'calibrating' || microphoneStatus === 'ready') && (
+              <div className={`microphone-state${isVoiceActive ? ' microphone-state--voice' : ''}`}>
+                <div className="microphone-state__copy">
+                  <span className="microphone-state__indicator" aria-hidden="true" />
+                  <div>
+                    <strong>
+                      {microphoneStatus === 'calibrating'
+                        ? 'Мікрофон увімкнено'
+                        : 'Мікрофон готовий'}
+                    </strong>
+                    <p>
+                      {microphoneStatus === 'calibrating'
+                        ? 'Калібруємо тишу, зачекай ще мить'
+                        : isVoiceActive
+                          ? 'Чуємо твій голос'
+                          : 'Починай, коли будеш готовий'}
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className={`audio-level${isVoiceActive ? ' audio-level--active' : ''}`}
+                  style={audioMeterStyle}
+                  aria-label={isVoiceActive ? 'Голос виявлено' : 'Очікуємо на голос'}
+                >
+                  <span />
+                </div>
+                {AUDIO_DEBUG && (
+                  <dl className="audio-debug">
+                    <div><dt>RMS</dt><dd>{audioDebugData.rms.toFixed(4)}</dd></div>
+                    <div><dt>Threshold</dt><dd>{voiceThreshold.toFixed(4)}</dd></div>
+                    <div><dt>Low/mid ratio</dt><dd>{audioDebugData.lowMidEnergyRatio.toFixed(3)}</dd></div>
+                    <div><dt>Fricative ratio</dt><dd>{audioDebugData.fricativeEnergyRatio.toFixed(3)}</dd></div>
+                    <div><dt>Candidate</dt><dd>{String(audioDebugData.voiceCandidate)}</dd></div>
+                    <div><dt>Voice active</dt><dd>{String(isVoiceActive)}</dd></div>
+                  </dl>
+                )}
+              </div>
+            )}
+
+            {(microphoneStatus === 'error' || microphoneStatus === 'unsupported') && (
+              <div className="microphone-error">
+                <p>{microphoneError}</p>
+                <div className="microphone-error__actions">
+                  {microphoneStatus === 'error' && (
+                    <button type="button" onClick={enableMicrophone}>Спробувати ще раз</button>
+                  )}
+                  <button type="button" onClick={enableDemoMode}>Демо без мікрофона</button>
+                </div>
+              </div>
+            )}
+          </section>
         )}
-        {gameStatus !== 'completed' && (
+        {gameStatus !== 'completed' && inputMode === 'demo' && (
           <p className="demo-mode-note" id="demo-mode-note">
             Демо-режим: утримування кнопки імітує вимову звуку
           </p>

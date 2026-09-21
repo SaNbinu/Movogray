@@ -623,7 +623,8 @@
 }
 
 .hold-sound-button,
-.return-home-button {
+.return-home-button,
+.microphone-enable-button {
   position: relative;
   isolation: isolate;
   display: flex;
@@ -648,6 +649,20 @@
   transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   user-select: none;
   overflow: hidden;
+}
+
+.microphone-enable-button {
+  margin-top: 0;
+}
+
+.microphone-enable-button svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .hold-sound-button::before {
@@ -714,9 +729,165 @@
 
 .rocket-game-header__back:focus-visible,
 .hold-sound-button:focus-visible,
-.return-home-button:focus-visible {
+.return-home-button:focus-visible,
+.microphone-enable-button:focus-visible,
+.demo-mode-button:focus-visible,
+.microphone-error__actions button:focus-visible {
   outline: 3px solid rgba(79, 98, 220, 0.35);
   outline-offset: 2px;
+}
+
+.microphone-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 21px;
+}
+
+.demo-mode-button {
+  align-self: center;
+  min-height: 34px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 10px;
+  color: #777287;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.microphone-state,
+.microphone-error {
+  padding: 16px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(52, 48, 86, 0.08);
+}
+
+.microphone-state__copy,
+.microphone-state--loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.microphone-state__indicator {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border: 3px solid #d7d5e2;
+  border-radius: 50%;
+  background: #9b97aa;
+  box-shadow: 0 0 0 5px #f1f0f5;
+}
+
+.microphone-state--loading .microphone-state__indicator {
+  background: #6b65d1;
+  box-shadow: 0 0 0 5px #eeedff;
+  animation: microphone-pulse 900ms ease-in-out infinite alternate;
+}
+
+.microphone-state--voice .microphone-state__indicator {
+  border-color: #bde9dc;
+  background: #35aa89;
+  box-shadow: 0 0 0 5px #e7f8f2;
+}
+
+.microphone-state strong {
+  display: block;
+  color: var(--color-ink);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.microphone-state p {
+  margin: 3px 0 0;
+  color: var(--color-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.audio-level {
+  position: relative;
+  height: 9px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8e6ef;
+}
+
+.audio-level span {
+  display: block;
+  width: var(--audio-level, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7c78c9, #6862cb);
+  transition: width 80ms linear, background 160ms ease;
+}
+
+.audio-level--active span {
+  background: linear-gradient(90deg, #54bf9f, #35a984);
+}
+
+.audio-debug {
+  display: grid;
+  gap: 3px;
+  margin: 12px 0 0;
+  padding: 10px;
+  border-radius: 10px;
+  color: #5f5a70;
+  background: #f3f2f7;
+  font: 10px/1.35 ui-monospace, Consolas, monospace;
+}
+
+.audio-debug div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.audio-debug dt,
+.audio-debug dd {
+  margin: 0;
+}
+
+.microphone-error {
+  color: #6c4350;
+  background: #fff7f7;
+  box-shadow:
+    0 8px 20px rgba(105, 58, 72, 0.07),
+    inset 0 0 0 1px rgba(177, 82, 105, 0.08);
+}
+
+.microphone-error > p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.microphone-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.microphone-error__actions button {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 11px;
+  color: #57516a;
+  background: #eeebf4;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
 }
 
 .demo-mode-note {
@@ -734,14 +905,33 @@
   }
 
   .hold-sound-button:hover,
-  .return-home-button:hover {
+  .return-home-button:hover,
+  .microphone-enable-button:hover {
     background: linear-gradient(180deg, #ffeb95, #ffda63);
+  }
+
+  .demo-mode-button:hover,
+  .microphone-error__actions button:hover {
+    color: #524ca8;
+    background: #efedff;
   }
 
   .hold-sound-button:hover:active,
   .hold-sound-button--active:hover {
     color: #fff;
     background: linear-gradient(180deg, #6d6cdb, #5754c5);
+  }
+}
+
+@keyframes microphone-pulse {
+  from {
+    opacity: 0.55;
+    transform: scale(0.88);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -930,7 +1120,8 @@
   .game-feedback,
   .engine-flame,
   .rocket-game-header__back,
-  .hold-sound-button {
+  .hold-sound-button,
+  .audio-level span {
     transition-duration: 0.01ms;
   }
 
@@ -941,6 +1132,10 @@
   .rocket-position--boost,
   .rocket-position--finale,
   .space-stage--finale .space-star {
+    animation: none;
+  }
+
+  .microphone-state--loading .microphone-state__indicator {
     animation: none;
   }
 
