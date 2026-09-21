@@ -80,6 +80,30 @@
   letter-spacing: -0.2px;
 }
 
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.role-switch-button {
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 11px;
+  color: #615d71;
+  background: #f0eff6;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.role-switch-button:focus-visible {
+  outline: 3px solid rgba(79, 98, 220, 0.35);
+  outline-offset: 2px;
+}
+
 .welcome-section {
   margin-bottom: 24px;
 }
@@ -809,6 +833,12 @@
     padding-right: 10px;
   }
 
+  .role-switch-button {
+    padding-right: 6px;
+    padding-left: 6px;
+    font-size: 9px;
+  }
+
   .mission-card {
     padding: 21px;
   }
@@ -872,6 +902,13 @@
     padding-bottom: 0;
     gap: 15px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (hover: hover) {
+  .role-switch-button:hover {
+    color: #504aaa;
+    background: #eceaff;
   }
 }
 

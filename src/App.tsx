@@ -1,13 +1,17 @@
 import { useRef, useState } from 'react'
 import BottomNavigation from './components/BottomNavigation'
 import RocketGameScreen from './components/RocketGameScreen'
+import RoleSelectionScreen from './components/RoleSelectionScreen'
+import TherapistHomeScreen from './components/TherapistHomeScreen'
 import TodayMissionCard from './components/TodayMissionCard'
 import './App.css'
 
 type AppScreen = 'home' | 'rocket-game'
+type UserRole = 'child' | 'therapist' | null
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
+  const [role, setRole] = useState<UserRole>(null)
   const [points, setPoints] = useState(125)
   const [missionCompleted, setMissionCompleted] = useState(false)
   const rewardClaimedRef = useRef(false)
@@ -20,6 +24,14 @@ function App() {
     rewardClaimedRef.current = true
     setPoints((currentPoints) => currentPoints + 25)
     setMissionCompleted(true)
+  }
+
+  if (role === null) {
+    return <RoleSelectionScreen onSelectRole={setRole} />
+  }
+
+  if (role === 'therapist') {
+    return <TherapistHomeScreen onChangeRole={() => setRole(null)} />
   }
 
   if (currentScreen === 'rocket-game') {
@@ -44,11 +56,16 @@ function App() {
           <span className="brand__name">Мовограй</span>
         </div>
 
-        <div className="header-score" aria-label={`${points} очок`}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m12 3 2.7 5.4 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9Z" />
-          </svg>
-          <strong>{points}</strong>
+        <div className="app-header__actions">
+          <div className="header-score" aria-label={`${points} очок`}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3 2.7 5.4 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.4-4.2 6-.9Z" />
+            </svg>
+            <strong>{points}</strong>
+          </div>
+          <button className="role-switch-button" type="button" onClick={() => setRole(null)}>
+            Змінити роль
+          </button>
         </div>
       </header>
 
