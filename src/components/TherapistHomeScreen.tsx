@@ -1,12 +1,19 @@
 import './TherapistHomeScreen.css'
-import { therapistChildren } from '../data/therapistChildren'
+import type { TherapistChild } from '../data/therapistChildren'
 
 type TherapistHomeScreenProps = {
   onChangeRole: () => void
   onSelectChild: (childId: string) => void
+  children: TherapistChild[]
 }
 
-function TherapistHomeScreen({ onChangeRole, onSelectChild }: TherapistHomeScreenProps) {
+function TherapistHomeScreen({ children, onChangeRole, onSelectChild }: TherapistHomeScreenProps) {
+  const totalTasks = children.reduce((sum, child) => sum + child.tasks.length, 0)
+  const completedTasks = children.reduce(
+    (sum, child) => sum + child.tasks.filter((task) => task.completed).length,
+    0,
+  )
+
   return (
     <main className="therapist-home">
       <header className="therapist-home__header">
@@ -32,11 +39,11 @@ function TherapistHomeScreen({ onChangeRole, onSelectChild }: TherapistHomeScree
       <section className="therapist-stats" aria-label="Загальна статистика">
         <article className="therapist-stat therapist-stat--children">
           <span>Дітей у роботі</span>
-          <strong>3 дитини</strong>
+          <strong>{children.length} дитини</strong>
         </article>
         <article className="therapist-stat therapist-stat--tasks">
           <span>Сьогодні</span>
-          <strong>11 / 15</strong>
+          <strong>{completedTasks} / {totalTasks}</strong>
           <small>завдань виконано</small>
         </article>
       </section>
@@ -48,8 +55,10 @@ function TherapistHomeScreen({ onChangeRole, onSelectChild }: TherapistHomeScree
         </div>
 
         <div className="children-list">
-          {therapistChildren.map((child) => {
-            const progress = (child.completedTasks / child.totalTasks) * 100
+          {children.map((child) => {
+            const childTotalTasks = child.tasks.length
+            const childCompletedTasks = child.tasks.filter((task) => task.completed).length
+            const progress = childTotalTasks > 0 ? (childCompletedTasks / childTotalTasks) * 100 : 0
 
             return (
               <button
@@ -74,9 +83,9 @@ function TherapistHomeScreen({ onChangeRole, onSelectChild }: TherapistHomeScree
                       </svg>
                       {child.streak}
                     </span>
-                    <strong>{child.completedTasks} / {child.totalTasks}</strong>
+                      <strong>{childCompletedTasks} / {childTotalTasks}</strong>
                   </div>
-                  <div className="child-card__progress" aria-label={`Виконано ${child.completedTasks} з ${child.totalTasks} завдань`}>
+                  <div className="child-card__progress" aria-label={`Виконано ${childCompletedTasks} з ${childTotalTasks} завдань`}>
                     <span style={{ width: `${progress}%` }} />
                   </div>
                 </div>

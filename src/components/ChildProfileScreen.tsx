@@ -4,11 +4,12 @@ import './ChildProfileScreen.css'
 type ChildProfileScreenProps = {
   child: TherapistChild
   onBack: () => void
+  onAssignTask: () => void
 }
 
-function ChildProfileScreen({ child, onBack }: ChildProfileScreenProps) {
+function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenProps) {
   const totalTasks = child.tasks.length
-  const completedTasks = child.tasks.filter((task) => task.status === 'completed').length
+  const completedTasks = child.tasks.filter((task) => task.completed).length
   const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
   const recentResults = [
     `Сьогодні — ${completedTasks} / ${totalTasks}`,
@@ -67,17 +68,17 @@ function ChildProfileScreen({ child, onBack }: ChildProfileScreenProps) {
               <span className="profile-task-card__icon" aria-hidden="true">{task.icon}</span>
               <div>
                 <h3>{task.title}</h3>
-                <p>Звук «{child.targetSound}»</p>
+                <p>Звук «{task.targetSound}»</p>
               </div>
-              <span className={`task-status task-status--${task.status}`}>
-                {task.status === 'completed' ? 'Виконано' : 'Ще не виконано'}
+              <span className={`task-status task-status--${task.completed ? 'completed' : 'pending'}`}>
+                {task.completed ? 'Виконано' : 'Ще не виконано'}
               </span>
             </article>
           ))}
         </div>
       </section>
 
-      <button className="assign-task-button" type="button">+ Призначити завдання</button>
+      <button className="assign-task-button" type="button" onClick={onAssignTask}>+ Призначити завдання</button>
 
       <section className="recent-results" aria-labelledby="recent-results-title">
         <div className="profile-section-heading">

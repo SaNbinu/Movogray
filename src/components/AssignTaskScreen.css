@@ -1,0 +1,259 @@
+.assign-task {
+  width: 100%;
+  max-width: 680px;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 18px 18px 40px;
+  background:
+    radial-gradient(circle at 94% 0%, rgba(122, 104, 216, 0.1), transparent 220px),
+    var(--color-surface);
+}
+
+.assign-task__header {
+  min-height: 42px;
+}
+
+.assign-task__back {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px 7px 8px;
+  border: 0;
+  border-radius: 13px;
+  color: #5e596e;
+  background: #f1f0f6;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.assign-task__back svg {
+  width: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.assign-task__intro {
+  margin: 31px 0 29px;
+}
+
+.assign-task__intro p,
+.assign-task__intro span {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.assign-task__intro p {
+  color: #6b63bf;
+  font-size: 11px;
+  letter-spacing: 0.65px;
+  text-transform: uppercase;
+}
+
+.assign-task__intro h1 {
+  margin: 8px 0 5px;
+  color: var(--color-ink);
+  font-size: clamp(29px, 8vw, 38px);
+  font-weight: 840;
+  line-height: 1.05;
+  letter-spacing: -1px;
+}
+
+.assign-task__section {
+  margin-top: 28px;
+}
+
+.assign-task__section h2 {
+  margin: 0 0 13px;
+  color: var(--color-ink);
+  font-size: 19px;
+  font-weight: 830;
+  letter-spacing: -0.45px;
+}
+
+.exercise-list {
+  display: grid;
+  gap: 10px;
+}
+
+.exercise-card {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+  padding: 13px;
+  border: 1px solid transparent;
+  border-radius: 19px;
+  color: var(--color-ink);
+  background: #fff;
+  box-shadow:
+    0 7px 17px rgba(52, 48, 86, 0.065),
+    inset 0 0 0 1px rgba(71, 66, 112, 0.035);
+  font: inherit;
+  text-align: left;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
+.exercise-card--selected {
+  border-color: #7773d6;
+  background: #fafaff;
+  box-shadow: 0 8px 18px rgba(79, 77, 176, 0.12);
+  cursor: pointer;
+}
+
+.exercise-card--disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.exercise-card__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: #eeedff;
+  font-size: 20px;
+}
+
+.exercise-card__content {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.exercise-card__content strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 820;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exercise-card__content small {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.exercise-card__check {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #655fca;
+}
+
+.exercise-card__check svg {
+  width: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.6;
+}
+
+.exercise-card__soon {
+  padding: 5px 7px;
+  border-radius: 8px;
+  color: #817b90;
+  background: #f1f0f5;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.option-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.option-chip {
+  min-width: 48px;
+  min-height: 42px;
+  padding: 8px 13px;
+  border: 1px solid #e0dee9;
+  border-radius: 13px;
+  color: #696477;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.option-chip--selected {
+  border-color: #6862ca;
+  color: #fff;
+  background: linear-gradient(145deg, #666dd5, #754fca);
+  box-shadow: 0 5px 12px rgba(82, 76, 181, 0.2);
+}
+
+.assign-task__submit {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 34px;
+  border: 0;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(145deg, #6268d5, #744fca);
+  box-shadow: 0 8px 0 #4845a8, 0 13px 23px rgba(67, 58, 150, 0.2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 830;
+  cursor: pointer;
+}
+
+.assign-task__submit:active {
+  box-shadow: 0 3px 0 #4845a8, 0 7px 14px rgba(67, 58, 150, 0.18);
+  transform: translateY(4px);
+}
+
+.assign-task__back:focus-visible,
+.exercise-card--selected:focus-visible,
+.option-chip:focus-visible,
+.assign-task__submit:focus-visible {
+  outline: 3px solid rgba(79, 98, 220, 0.35);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .assign-task__back:hover {
+    color: #504aaa;
+    background: #eceaff;
+  }
+
+  .exercise-card--selected:hover {
+    border-color: #5f5bc1;
+  }
+
+  .option-chip:hover {
+    border-color: #aaa6d5;
+  }
+
+  .assign-task__submit:hover {
+    background: linear-gradient(145deg, #6d75df, #805bd3);
+  }
+}
+
+@media (min-width: 640px) {
+  .assign-task {
+    min-height: calc(100svh - 40px);
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 28px 38px 40px;
+    border-radius: 34px;
+    box-shadow: 0 18px 42px rgba(43, 39, 77, 0.09);
+  }
+}

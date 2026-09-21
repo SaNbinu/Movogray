@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import AssignTaskScreen from './components/AssignTaskScreen'
 import BottomNavigation from './components/BottomNavigation'
 import ChildProfileScreen from './components/ChildProfileScreen'
 import RocketGameScreen from './components/RocketGameScreen'
@@ -6,18 +7,23 @@ import RoleSelectionScreen from './components/RoleSelectionScreen'
 import TherapistHomeScreen from './components/TherapistHomeScreen'
 import TodayMissionCard from './components/TodayMissionCard'
 import { therapistChildren } from './data/therapistChildren'
+import type { NewTherapistTask } from './data/therapistChildren'
 import './App.css'
 
 type AppScreen = 'home' | 'rocket-game'
 type UserRole = 'child' | 'therapist' | null
+type TherapistScreen = 'home' | 'profile' | 'assign-task'
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
   const [role, setRole] = useState<UserRole>(null)
+  const [children, setChildren] = useState(therapistChildren)
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
+  const [therapistScreen, setTherapistScreen] = useState<TherapistScreen>('home')
   const [points, setPoints] = useState(125)
   const [missionCompleted, setMissionCompleted] = useState(false)
   const rewardClaimedRef = useRef(false)
+  const nextTaskIdRef = useRef(0)
 
   function handleMissionComplete() {
     if (rewardClaimedRef.current) {
@@ -29,18 +35,66 @@ function App() {
     setMissionCompleted(true)
   }
 
+  function handleRoleSelection(nextRole: UserRole) {
+    setRole(nextRole)
+    setSelectedChildId(null)
+    setTherapistScreen('home')
+  }
+
+  function handleSelectChild(childId: string) {
+    setSelectedChildId(childId)
+    setTherapistScreen('profile')
+  }
+
+  function handleAssignTask(task: NewTherapistTask) {
+    if (!selectedChildId) {
+      return
+    }
+
+    setChildren((currentChildren) => currentChildren.map((child) => (
+      child.id === selectedChildId
+        ? {
+            ...child,
+            tasks: [
+              ...child.tasks,
+              {
+                ...task,
+                id: `task-${child.id}-${Date.now()}-${nextTaskIdRef.current++}`,
+                completed: false,
+              },
+            ],
+          }
+        : child
+    )))
+    setTherapistScreen('profile')
+  }
+
   if (role === null) {
-    return <RoleSelectionScreen onSelectRole={setRole} />
+    return <RoleSelectionScreen onSelectRole={handleRoleSelection} />
   }
 
   if (role === 'therapist') {
-    const selectedChild = therapistChildren.find((child) => child.id === selectedChildId)
+    const selectedChild = children.find((child) => child.id === selectedChildId)
 
-    if (selectedChild) {
+    if (selectedChild && therapistScreen === 'assign-task') {
+      return (
+        <AssignTaskScreen
+          child={selectedChild}
+          onBack={() => setTherapistScreen('profile')}
+          onAssign={handleAssignTask}
+        />
+      )
+    }
+
+    if (selectedChild && therapistScreen === 'profile') {
       return (
         <ChildProfileScreen
           child={selectedChild}
-          onBack={() => setSelectedChildId(null)}
+          onBack={() => {
+            setSelectedChildId(null)
+            setTherapistScreen('home')
+          }}
+          onAssignTask={() => setTherapistScreen('assign-task')}
         />
       )
     }
@@ -49,9 +103,11 @@ function App() {
       <TherapistHomeScreen
         onChangeRole={() => {
           setSelectedChildId(null)
+          setTherapistScreen('home')
           setRole(null)
         }}
-        onSelectChild={setSelectedChildId}
+        children={children}
+        onSelectChild={handleSelectChild}
       />
     )
   }
