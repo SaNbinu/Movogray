@@ -160,15 +160,22 @@
 
 .child-card {
   display: grid;
+  width: 100%;
   align-items: center;
   gap: 13px;
   padding: 14px;
+  border: 0;
   border-radius: 21px;
+  color: inherit;
   background: #fff;
   box-shadow:
     0 8px 20px rgba(52, 48, 86, 0.075),
     inset 0 0 0 1px rgba(71, 66, 112, 0.035);
-  grid-template-columns: 50px minmax(0, 1fr);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+  grid-template-columns: 50px minmax(0, 1fr) 28px;
 }
 
 .child-card__avatar {
@@ -265,6 +272,25 @@
   background: linear-gradient(90deg, #6269d5, #7961cd);
 }
 
+.child-card__arrow {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 10px;
+  color: #77728b;
+  background: #f2f1f7;
+}
+
+.child-card__arrow svg {
+  width: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
 .add-child-button {
   width: 100%;
   min-height: 56px;
@@ -280,7 +306,8 @@
 }
 
 .therapist-home__role-switch:focus-visible,
-.add-child-button:focus-visible {
+.add-child-button:focus-visible,
+.child-card:focus-visible {
   outline: 3px solid rgba(79, 98, 220, 0.35);
   outline-offset: 2px;
 }
@@ -295,6 +322,22 @@
     border-color: #7c76ca;
     background: #f0efff;
   }
+
+  .child-card:hover {
+    box-shadow:
+      0 12px 25px rgba(52, 48, 86, 0.11),
+      inset 0 0 0 1px rgba(71, 66, 112, 0.05);
+    transform: translateY(-1px);
+  }
+
+  .child-card:hover .child-card__arrow {
+    color: #5c55b4;
+    background: #ebe9ff;
+  }
+}
+
+.child-card:active {
+  transform: scale(0.99);
 }
 
 @media (min-width: 640px) {

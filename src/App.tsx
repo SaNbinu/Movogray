@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react'
 import BottomNavigation from './components/BottomNavigation'
+import ChildProfileScreen from './components/ChildProfileScreen'
 import RocketGameScreen from './components/RocketGameScreen'
 import RoleSelectionScreen from './components/RoleSelectionScreen'
 import TherapistHomeScreen from './components/TherapistHomeScreen'
 import TodayMissionCard from './components/TodayMissionCard'
+import { therapistChildren } from './data/therapistChildren'
 import './App.css'
 
 type AppScreen = 'home' | 'rocket-game'
@@ -12,6 +14,7 @@ type UserRole = 'child' | 'therapist' | null
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
   const [role, setRole] = useState<UserRole>(null)
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
   const [points, setPoints] = useState(125)
   const [missionCompleted, setMissionCompleted] = useState(false)
   const rewardClaimedRef = useRef(false)
@@ -31,7 +34,26 @@ function App() {
   }
 
   if (role === 'therapist') {
-    return <TherapistHomeScreen onChangeRole={() => setRole(null)} />
+    const selectedChild = therapistChildren.find((child) => child.id === selectedChildId)
+
+    if (selectedChild) {
+      return (
+        <ChildProfileScreen
+          child={selectedChild}
+          onBack={() => setSelectedChildId(null)}
+        />
+      )
+    }
+
+    return (
+      <TherapistHomeScreen
+        onChangeRole={() => {
+          setSelectedChildId(null)
+          setRole(null)
+        }}
+        onSelectChild={setSelectedChildId}
+      />
+    )
   }
 
   if (currentScreen === 'rocket-game') {

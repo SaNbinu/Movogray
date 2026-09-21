@@ -1,16 +1,12 @@
 import './TherapistHomeScreen.css'
+import { therapistChildren } from '../data/therapistChildren'
 
 type TherapistHomeScreenProps = {
   onChangeRole: () => void
+  onSelectChild: (childId: string) => void
 }
 
-const children = [
-  { name: 'Максим', sound: 'Р', streak: '3 дні', completed: 4, total: 5, color: 'blue' },
-  { name: 'Софія', sound: 'С', streak: '5 днів', completed: 5, total: 5, color: 'purple' },
-  { name: 'Артем', sound: 'Ш', streak: '1 день', completed: 2, total: 5, color: 'mint' },
-]
-
-function TherapistHomeScreen({ onChangeRole }: TherapistHomeScreenProps) {
+function TherapistHomeScreen({ onChangeRole, onSelectChild }: TherapistHomeScreenProps) {
   return (
     <main className="therapist-home">
       <header className="therapist-home__header">
@@ -52,18 +48,24 @@ function TherapistHomeScreen({ onChangeRole }: TherapistHomeScreenProps) {
         </div>
 
         <div className="children-list">
-          {children.map((child) => {
-            const progress = (child.completed / child.total) * 100
+          {therapistChildren.map((child) => {
+            const progress = (child.completedTasks / child.totalTasks) * 100
 
             return (
-              <article className="child-card" key={child.name}>
-                <div className={`child-card__avatar child-card__avatar--${child.color}`} aria-hidden="true">
+              <button
+                className="child-card"
+                type="button"
+                key={child.id}
+                onClick={() => onSelectChild(child.id)}
+                aria-label={`Відкрити профіль: ${child.name}`}
+              >
+                <span className={`child-card__avatar child-card__avatar--${child.avatarColor}`} aria-hidden="true">
                   {child.name.slice(0, 1)}
-                </div>
+                </span>
                 <div className="child-card__content">
                   <div className="child-card__topline">
                     <h3>{child.name}</h3>
-                    <span className="child-card__sound">Звук {child.sound}</span>
+                    <span className="child-card__sound">Звук {child.targetSound}</span>
                   </div>
                   <div className="child-card__details">
                     <span>
@@ -72,13 +74,16 @@ function TherapistHomeScreen({ onChangeRole }: TherapistHomeScreenProps) {
                       </svg>
                       {child.streak}
                     </span>
-                    <strong>{child.completed} / {child.total}</strong>
+                    <strong>{child.completedTasks} / {child.totalTasks}</strong>
                   </div>
-                  <div className="child-card__progress" aria-label={`Виконано ${child.completed} з ${child.total} завдань`}>
+                  <div className="child-card__progress" aria-label={`Виконано ${child.completedTasks} з ${child.totalTasks} завдань`}>
                     <span style={{ width: `${progress}%` }} />
                   </div>
                 </div>
-              </article>
+                <span className="child-card__arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" /></svg>
+                </span>
+              </button>
             )
           })}
         </div>
