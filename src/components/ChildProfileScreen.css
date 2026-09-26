@@ -10,7 +10,11 @@
 }
 
 .child-profile__header {
+  display: flex;
   min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .child-profile__back {
@@ -36,6 +40,19 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.2;
+}
+
+.child-profile__edit {
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 10px;
+  color: #5d5871;
+  background: #f0eff6;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
 }
 
 .child-profile__intro {
@@ -318,6 +335,7 @@
 }
 
 .child-profile__back:focus-visible,
+.child-profile__edit:focus-visible,
 .assign-task-button:focus-visible {
   outline: 3px solid rgba(79, 98, 220, 0.35);
   outline-offset: 2px;
@@ -325,6 +343,11 @@
 
 @media (hover: hover) {
   .child-profile__back:hover {
+    color: #504aaa;
+    background: #eceaff;
+  }
+
+  .child-profile__edit:hover {
     color: #504aaa;
     background: #eceaff;
   }

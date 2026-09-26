@@ -4,6 +4,7 @@ import AssignTaskScreen from './components/AssignTaskScreen'
 import ChildHomeScreen from './components/ChildHomeScreen'
 import ChildProfileScreen from './components/ChildProfileScreen'
 import ChildSelectionScreen from './components/ChildSelectionScreen'
+import EditChildScreen from './components/EditChildScreen'
 import RocketGameScreen from './components/RocketGameScreen'
 import RoleSelectionScreen from './components/RoleSelectionScreen'
 import TherapistHomeScreen from './components/TherapistHomeScreen'
@@ -15,7 +16,7 @@ const CHILDREN_STORAGE_KEY = 'movogray_children'
 
 type AppScreen = 'home' | 'rocket-game'
 type UserRole = 'child' | 'therapist' | null
-type TherapistScreen = 'home' | 'profile' | 'assign-task' | 'add-child'
+type TherapistScreen = 'home' | 'profile' | 'assign-task' | 'add-child' | 'edit-child'
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
@@ -139,6 +140,13 @@ function App() {
     setTherapistScreen('home')
   }
 
+  function updateChild(childId: string, updates: Pick<TherapistChild, 'name' | 'targetSound'>) {
+    setChildren((currentChildren) => currentChildren.map((child) => (
+      child.id === childId ? { ...child, ...updates } : child
+    )))
+    setTherapistScreen('profile')
+  }
+
   if (role === null) {
     return <RoleSelectionScreen onSelectRole={handleRoleSelection} />
   }
@@ -151,6 +159,16 @@ function App() {
         <AddChildScreen
           onBack={() => setTherapistScreen('home')}
           onAdd={addChild}
+        />
+      )
+    }
+
+    if (selectedChild && therapistScreen === 'edit-child') {
+      return (
+        <EditChildScreen
+          child={selectedChild}
+          onBack={() => setTherapistScreen('profile')}
+          onSave={(updates) => updateChild(selectedChild.id, updates)}
         />
       )
     }
@@ -169,6 +187,7 @@ function App() {
       return (
         <ChildProfileScreen
           child={selectedChild}
+          onEdit={() => setTherapistScreen('edit-child')}
           onBack={() => {
             setSelectedChildId(null)
             setTherapistScreen('home')

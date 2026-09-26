@@ -4,10 +4,11 @@ import './ChildProfileScreen.css'
 type ChildProfileScreenProps = {
   child: TherapistChild
   onBack: () => void
+  onEdit: () => void
   onAssignTask: () => void
 }
 
-function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenProps) {
+function ChildProfileScreen({ child, onBack, onEdit, onAssignTask }: ChildProfileScreenProps) {
   const totalTasks = child.tasks.length
   const completedTasks = child.tasks.filter((task) => task.completed).length
   const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
@@ -25,6 +26,7 @@ function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenP
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>
           Назад
         </button>
+        <button className="child-profile__edit" type="button" onClick={onEdit}>Редагувати</button>
       </header>
 
       <section className="child-profile__intro" aria-labelledby="child-profile-title">
