@@ -4,7 +4,6 @@ import type { TherapistChild, TherapistTask } from '../data/therapistChildren'
 
 type ChildHomeScreenProps = {
   child: TherapistChild
-  missionCompleted: boolean
   onChangeRole: () => void
   onChangeProfile: () => void
   onStartTask: (task: TherapistTask) => void
@@ -12,7 +11,6 @@ type ChildHomeScreenProps = {
 
 function ChildHomeScreen({
   child,
-  missionCompleted,
   onChangeRole,
   onChangeProfile,
   onStartTask,
@@ -58,7 +56,6 @@ function ChildHomeScreen({
 
         <TodayMissionCard
           task={rocketTask}
-          isCompleted={missionCompleted}
           onStart={() => {
             if (rocketTask) {
               onStartTask(rocketTask)

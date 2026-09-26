@@ -5,7 +5,7 @@ import './RocketGameScreen.css'
 type RocketGameScreenProps = {
   task: Pick<TherapistTask, 'id' | 'title' | 'targetSound' | 'repetitions' | 'durationSeconds'>
   onBack: () => void
-  onMissionComplete: () => void
+  onComplete: (taskId: string) => void
 }
 
 type GameStatus = 'ready' | 'holding' | 'success' | 'finale' | 'completed'
@@ -35,7 +35,7 @@ const CONTINUING_FRICATIVE_ENERGY_RATIO = 0.3
 const VOICE_START_DELAY = 160
 const VOICE_STOP_DELAY = 160
 
-function RocketGameScreen({ task, onBack, onMissionComplete }: RocketGameScreenProps) {
+function RocketGameScreen({ task, onBack, onComplete }: RocketGameScreenProps) {
   const holdDuration = task.durationSeconds * 1000
   const totalTasks = task.repetitions
   const secondsLabel = `${task.durationSeconds} ${task.durationSeconds === 5 ? 'секунд' : 'секунди'}`
@@ -59,6 +59,7 @@ function RocketGameScreen({ task, onBack, onMissionComplete }: RocketGameScreenP
   const animationFrameRef = useRef<number | null>(null)
   const audioFrameRef = useRef<number | null>(null)
   const nextTaskTimeoutRef = useRef<number | null>(null)
+  const taskCompletionReportedRef = useRef(false)
   const holdStartedAtRef = useRef(0)
   const gameStatusRef = useRef<GameStatus>('ready')
   const microphoneStatusRef = useRef<MicrophoneStatus>('idle')
@@ -409,7 +410,10 @@ function RocketGameScreen({ task, onBack, onMissionComplete }: RocketGameScreenP
     if (nextCompletedTasks === totalTasks) {
       updateGameStatus('finale')
       setFeedback(`${totalTasks} з ${totalTasks}!`)
-      onMissionComplete()
+      if (!taskCompletionReportedRef.current) {
+        taskCompletionReportedRef.current = true
+        onComplete(task.id)
+      }
       nextTaskTimeoutRef.current = window.setTimeout(() => {
         nextTaskTimeoutRef.current = null
         setFeedback(null)

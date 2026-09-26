@@ -20,27 +20,28 @@ function App() {
   const [children, setChildren] = useState(therapistChildren)
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
   const [therapistScreen, setTherapistScreen] = useState<TherapistScreen>('home')
-  const [missionCompleted, setMissionCompleted] = useState(false)
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
-  const rewardClaimedRef = useRef(false)
   const nextTaskIdRef = useRef(0)
 
-  function handleMissionComplete() {
-    if (rewardClaimedRef.current) {
-      return
-    }
+  function completeTask(childId: string, taskId: string) {
+    setChildren((currentChildren) => currentChildren.map((child) => {
+      if (child.id !== childId) {
+        return child
+      }
 
-    if (!selectedChildId) {
-      return
-    }
+      const taskToComplete = child.tasks.find((task) => task.id === taskId)
+      if (!taskToComplete || taskToComplete.completed) {
+        return child
+      }
 
-    rewardClaimedRef.current = true
-    setChildren((currentChildren) => currentChildren.map((child) => (
-      child.id === selectedChildId
-        ? { ...child, points: child.points + 25 }
-        : child
-    )))
-    setMissionCompleted(true)
+      return {
+        ...child,
+        points: child.points + 25,
+        tasks: child.tasks.map((task) => (
+          task.id === taskId ? { ...task, completed: true } : task
+        )),
+      }
+    }))
   }
 
   function handleRoleSelection(nextRole: 'child' | 'therapist') {
@@ -49,8 +50,6 @@ function App() {
     setTherapistScreen('home')
     setCurrentScreen('home')
     setActiveTaskId(null)
-    setMissionCompleted(false)
-    rewardClaimedRef.current = false
   }
 
   function handleChangeRole() {
@@ -59,8 +58,6 @@ function App() {
     setTherapistScreen('home')
     setCurrentScreen('home')
     setActiveTaskId(null)
-    setMissionCompleted(false)
-    rewardClaimedRef.current = false
   }
 
   function handleSelectTherapistChild(childId: string) {
@@ -72,8 +69,6 @@ function App() {
     setSelectedChildId(childId)
     setCurrentScreen('home')
     setActiveTaskId(null)
-    setMissionCompleted(false)
-    rewardClaimedRef.current = false
   }
 
   function handleAssignTask(task: NewTherapistTask) {
@@ -151,7 +146,7 @@ function App() {
   }
 
   const activeRocketTask = selectedChild.tasks.find(
-    (task) => task.id === activeTaskId && task.type === 'rocket' && !task.completed,
+    (task) => task.id === activeTaskId && task.type === 'rocket',
   )
 
   if (currentScreen === 'rocket-game' && activeRocketTask) {
@@ -162,7 +157,7 @@ function App() {
           setActiveTaskId(null)
           setCurrentScreen('home')
         }}
-        onMissionComplete={handleMissionComplete}
+        onComplete={(taskId) => completeTask(selectedChild.id, taskId)}
       />
     )
   }
@@ -170,14 +165,11 @@ function App() {
   return (
     <ChildHomeScreen
       child={selectedChild}
-      missionCompleted={missionCompleted}
       onChangeRole={handleChangeRole}
       onChangeProfile={() => {
         setSelectedChildId(null)
         setCurrentScreen('home')
         setActiveTaskId(null)
-        setMissionCompleted(false)
-        rewardClaimedRef.current = false
       }}
       onStartTask={(task: TherapistTask) => {
         if (task.type === 'rocket' && !task.completed) {

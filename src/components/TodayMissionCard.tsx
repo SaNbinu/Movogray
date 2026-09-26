@@ -2,28 +2,25 @@ import type { TherapistTask } from '../data/therapistChildren'
 
 type TodayMissionCardProps = {
   task: TherapistTask | null
-  isCompleted: boolean
   onStart: () => void
 }
 
-function TodayMissionCard({ task, isCompleted, onStart }: TodayMissionCardProps) {
+function TodayMissionCard({ task, onStart }: TodayMissionCardProps) {
   const isEmpty = task === null
 
   return (
     <article
-      className={`mission-card${isCompleted && !isEmpty ? ' mission-card--completed' : ''}${isEmpty ? ' mission-card--empty' : ''}`}
+      className={`mission-card${isEmpty ? ' mission-card--empty' : ''}`}
       aria-labelledby="mission-title"
     >
       <div className="mission-card__content">
         <p className="mission-card__eyebrow">
-          {isEmpty ? 'На сьогодні все' : isCompleted ? 'Сьогодні виконано' : 'Сьогоднішня місія'}
+          {isEmpty ? 'На сьогодні все' : 'Сьогоднішня місія'}
         </p>
         <h2 id="mission-title">{task?.title ?? 'Усі завдання виконано! 🎉'}</h2>
         <p className="mission-card__description">
           {isEmpty
             ? 'Нових ігор поки немає. Завітай трохи пізніше.'
-            : isCompleted
-            ? 'Усі вправи зі звуком виконано. Чудова робота!'
             : 'Виконай вправи зі звуком і допоможи ракеті дістатися зірок.'}
         </p>
 
@@ -78,14 +75,7 @@ function TodayMissionCard({ task, isCompleted, onStart }: TodayMissionCardProps)
         </svg>
       </div>
 
-      {task && isCompleted ? (
-        <div className="mission-card__completed-status" role="status">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m5 12.5 4.2 4.2L19 7" />
-          </svg>
-          Місію завершено
-        </div>
-      ) : task ? (
+      {task ? (
         <button className="mission-card__button" type="button" onClick={onStart}>
           Почати гру
           <svg viewBox="0 0 24 24" aria-hidden="true">
