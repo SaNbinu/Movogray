@@ -187,6 +187,21 @@
   gap: 10px;
 }
 
+.profile-tasks__empty,
+.recent-results__empty {
+  margin: 0;
+  padding: 17px 15px;
+  border-radius: 18px;
+  color: var(--color-muted);
+  background: #fff;
+  box-shadow:
+    0 7px 17px rgba(52, 48, 86, 0.065),
+    inset 0 0 0 1px rgba(71, 66, 112, 0.035);
+  font-size: 13px;
+  font-weight: 650;
+  text-align: center;
+}
+
 .profile-task-card {
   display: grid;
   min-width: 0;

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import AddChildScreen from './components/AddChildScreen'
 import AssignTaskScreen from './components/AssignTaskScreen'
 import ChildHomeScreen from './components/ChildHomeScreen'
 import ChildProfileScreen from './components/ChildProfileScreen'
@@ -7,12 +8,12 @@ import RocketGameScreen from './components/RocketGameScreen'
 import RoleSelectionScreen from './components/RoleSelectionScreen'
 import TherapistHomeScreen from './components/TherapistHomeScreen'
 import { therapistChildren } from './data/therapistChildren'
-import type { NewTherapistTask, TherapistTask } from './data/therapistChildren'
+import type { NewTherapistTask, TherapistChild, TherapistTask } from './data/therapistChildren'
 import './App.css'
 
 type AppScreen = 'home' | 'rocket-game'
 type UserRole = 'child' | 'therapist' | null
-type TherapistScreen = 'home' | 'profile' | 'assign-task'
+type TherapistScreen = 'home' | 'profile' | 'assign-task' | 'add-child'
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
@@ -94,12 +95,44 @@ function App() {
     setTherapistScreen('profile')
   }
 
+  function addChild({ name, targetSound }: Pick<TherapistChild, 'name' | 'targetSound'>) {
+    setChildren((currentChildren) => {
+      const avatarColors = ['blue', 'purple', 'mint'] as const
+      const avatarColor = avatarColors[currentChildren.length % avatarColors.length]
+
+      return [
+        ...currentChildren,
+        {
+          id: crypto.randomUUID(),
+          name,
+          targetSound,
+          points: 0,
+          streak: '0 днів',
+          lastActivity: 'ще не було',
+          avatarColor,
+          tasks: [],
+          recentResults: [],
+        },
+      ]
+    })
+    setTherapistScreen('home')
+  }
+
   if (role === null) {
     return <RoleSelectionScreen onSelectRole={handleRoleSelection} />
   }
 
   if (role === 'therapist') {
     const selectedChild = children.find((child) => child.id === selectedChildId)
+
+    if (therapistScreen === 'add-child') {
+      return (
+        <AddChildScreen
+          onBack={() => setTherapistScreen('home')}
+          onAdd={addChild}
+        />
+      )
+    }
 
     if (selectedChild && therapistScreen === 'assign-task') {
       return (
@@ -128,6 +161,7 @@ function App() {
       <TherapistHomeScreen
         children={children}
         onChangeRole={handleChangeRole}
+        onAddChild={() => setTherapistScreen('add-child')}
         onSelectChild={handleSelectTherapistChild}
       />
     )

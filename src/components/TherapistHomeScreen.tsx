@@ -4,10 +4,11 @@ import type { TherapistChild } from '../data/therapistChildren'
 type TherapistHomeScreenProps = {
   onChangeRole: () => void
   onSelectChild: (childId: string) => void
+  onAddChild: () => void
   children: TherapistChild[]
 }
 
-function TherapistHomeScreen({ children, onChangeRole, onSelectChild }: TherapistHomeScreenProps) {
+function TherapistHomeScreen({ children, onChangeRole, onSelectChild, onAddChild }: TherapistHomeScreenProps) {
   const totalTasks = children.reduce((sum, child) => sum + child.tasks.length, 0)
   const completedTasks = children.reduce(
     (sum, child) => sum + child.tasks.filter((task) => task.completed).length,
@@ -83,7 +84,7 @@ function TherapistHomeScreen({ children, onChangeRole, onSelectChild }: Therapis
                       </svg>
                       {child.streak}
                     </span>
-                      <strong>{childCompletedTasks} / {childTotalTasks}</strong>
+                      <strong>{childTotalTasks === 0 ? 'Завдань ще немає' : `${childCompletedTasks} / ${childTotalTasks}`}</strong>
                   </div>
                   <div className="child-card__progress" aria-label={`Виконано ${childCompletedTasks} з ${childTotalTasks} завдань`}>
                     <span style={{ width: `${progress}%` }} />
@@ -98,7 +99,7 @@ function TherapistHomeScreen({ children, onChangeRole, onSelectChild }: Therapis
         </div>
       </section>
 
-      <button className="add-child-button" type="button">+ Додати дитину</button>
+      <button className="add-child-button" type="button" onClick={onAddChild}>+ Додати дитину</button>
     </main>
   )
 }

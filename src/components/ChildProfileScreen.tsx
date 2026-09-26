@@ -11,10 +11,12 @@ function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenP
   const totalTasks = child.tasks.length
   const completedTasks = child.tasks.filter((task) => task.completed).length
   const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
-  const recentResults = [
-    `Сьогодні — ${completedTasks} / ${totalTasks}`,
-    ...child.recentResults.filter((result) => !result.startsWith('Сьогодні')).slice(0, 2),
-  ]
+  const recentResults = totalTasks > 0
+    ? [
+        `Сьогодні — ${completedTasks} / ${totalTasks}`,
+        ...child.recentResults.filter((result) => !result.startsWith('Сьогодні')).slice(0, 2),
+      ]
+    : child.recentResults.filter((result) => !result.startsWith('Сьогодні')).slice(0, 2)
 
   return (
     <main className="child-profile">
@@ -41,11 +43,15 @@ function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenP
           <span>Прогрес сьогодні</span>
         </div>
         <h2 id="daily-progress-title">
-          {completedTasks} з {totalTasks} завдань виконано
+          {totalTasks > 0
+            ? `${completedTasks} з ${totalTasks} завдань виконано`
+            : 'Завдань на сьогодні ще немає'}
         </h2>
-        <div className="daily-progress__bar" aria-label={`Виконано ${completedTasks} з ${totalTasks} завдань`}>
-          <span style={{ width: `${progress}%` }} />
-        </div>
+        {totalTasks > 0 && (
+          <div className="daily-progress__bar" aria-label={`Виконано ${completedTasks} з ${totalTasks} завдань`}>
+            <span style={{ width: `${progress}%` }} />
+          </div>
+        )}
         <div className="daily-progress__details">
           <span>
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -60,10 +66,12 @@ function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenP
       <section className="profile-tasks" aria-labelledby="profile-tasks-title">
         <div className="profile-section-heading">
           <h2 id="profile-tasks-title">Завдання на сьогодні</h2>
-          <span>{totalTasks} завдань</span>
+          <span>{totalTasks > 0 ? `${totalTasks} завдань` : 'Поки немає'}</span>
         </div>
         <div className="profile-tasks__list">
-          {child.tasks.map((task) => (
+          {totalTasks === 0 ? (
+            <p className="profile-tasks__empty">Завдань на сьогодні ще немає</p>
+          ) : child.tasks.map((task) => (
             <article className="profile-task-card" key={task.id}>
               <span className="profile-task-card__icon" aria-hidden="true">{task.icon}</span>
               <div>
@@ -85,7 +93,9 @@ function ChildProfileScreen({ child, onBack, onAssignTask }: ChildProfileScreenP
           <h2 id="recent-results-title">Останні результати</h2>
         </div>
         <div className="recent-results__list">
-          {recentResults.map((result) => (
+          {recentResults.length === 0 ? (
+            <p className="recent-results__empty">Результатів ще немає</p>
+          ) : recentResults.map((result) => (
             <p key={result}>
               <span />
               {result}
