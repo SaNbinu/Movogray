@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AddChildScreen from './components/AddChildScreen'
 import AssignTaskScreen from './components/AssignTaskScreen'
 import ChildHomeScreen from './components/ChildHomeScreen'
@@ -11,6 +11,8 @@ import { therapistChildren } from './data/therapistChildren'
 import type { NewTherapistTask, TherapistChild, TherapistTask } from './data/therapistChildren'
 import './App.css'
 
+const CHILDREN_STORAGE_KEY = 'movogray_children'
+
 type AppScreen = 'home' | 'rocket-game'
 type UserRole = 'child' | 'therapist' | null
 type TherapistScreen = 'home' | 'profile' | 'assign-task' | 'add-child'
@@ -18,11 +20,30 @@ type TherapistScreen = 'home' | 'profile' | 'assign-task' | 'add-child'
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('home')
   const [role, setRole] = useState<UserRole>(null)
-  const [children, setChildren] = useState(therapistChildren)
+  const [children, setChildren] = useState<TherapistChild[]>(() => {
+    try {
+      const savedChildren = localStorage.getItem(CHILDREN_STORAGE_KEY)
+      const parsedChildren: unknown = savedChildren ? JSON.parse(savedChildren) : null
+
+      return Array.isArray(parsedChildren) ? parsedChildren : therapistChildren
+    } catch {
+      return therapistChildren
+    }
+  })
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
   const [therapistScreen, setTherapistScreen] = useState<TherapistScreen>('home')
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const nextTaskIdRef = useRef(0)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHILDREN_STORAGE_KEY, JSON.stringify(children))
+    } catch {
+      // Persistence is optional; the in-memory state remains usable if storage is unavailable.
+    }
+  }, [children])
+
+  // Developer reset helper: localStorage.removeItem(CHILDREN_STORAGE_KEY)
 
   function completeTask(childId: string, taskId: string) {
     setChildren((currentChildren) => currentChildren.map((child) => {
